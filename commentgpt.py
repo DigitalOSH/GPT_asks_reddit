@@ -96,7 +96,7 @@ def respondtocomment(msglink, response): #Actually post ChatGPT's response to th
 
 def waitthislong(time): #Wait for a random amount of time before starting the script over
     mins, secs = divmod(time, 60)
-    print(f"Waiting for {mins} minutes and {secs} seconds before the next post")
+    print(f"Waiting for {mins} minutes and {secs} seconds before checking for comments")
     countdown(int(time))
 
 def countdown(t): #Generates a live countdown in the console
