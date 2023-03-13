@@ -22,21 +22,16 @@ reddit = praw.Reddit(client_id= secrets["reddit_client_id"],
                      redirect_uri=secrets["reddit_redirect_uri"],
                      user_agent='GPT Reddit Commenter 1.2b by /u/NermutBundaloy')
 
-def chatgptget(prompt):#Send the prompt to ChatGPT for a response <- Not in use yet, will come into play when I dynamically get questions from ChatGPT
+def askgpt(prompt): #Send the prompt to ChatGPT for a response
     response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo", 
-        messages=[{"role": "user", "content": prompt}]
-        )
-    return(response)
-
-
-def findsubtitle(subnum):
-    title = str(submission_titles[subnum]) #Get submission number (subnum) out of the list of titles
-    title = title.replace("['","") #Clean up the title
-    title = title.replace("']","")
-    title = title.replace('["','')
-    title = title.replace('"]','')
-    return(title) #Send the submission title back to the main script
+    model="gpt-3.5-turbo", 
+    messages=[{"role": "user", "content": prompt}]
+    )
+    content = response['choices'][0]['message']['content'] #Parse out just the response
+    content = content.lstrip()
+    if content.startswith('"') and content.endswith('"'):
+        content = content[1:-1]
+    return(content) #Send the response back to the main script
 
 def countdown(t):#Generates a live countdown in the console
     while t:
@@ -53,14 +48,11 @@ def waitthislong(time): #Wait for the number of seconds passed in 'time' before 
 
 # MAIN SCRIPT#
 os.system('clear') #Clear the console
-with open('submission_titles.tsv', 'r') as f: #Get the list of submission titles - This will soon be automatically generated each time
-    submission_titles = [line.strip().split('\n') for line in f.readlines()]
-
 while True: #Start the loop
     timetowait=random.randint(21*60, 37*60) #Set how long the script will wait after a successful submission, to make another one.
-    title = findsubtitle(subnum) #Get a submission title from the findsubtitle function
+    prompt = "Give me an AskReddit question that is slightly edgy, slightly philosophical, and is not a yes or no question. Make sure the entire question is one one line. Do not use quotation marks."
+    title = askgpt(prompt) #Get a submission title from the findsubtitle function
     print(title)
-    subnum+=1 #increment the number of the submission we'll use by one
     
     try: 
         submission = reddit.subreddit('AskReddit').submit(title, selftext='')# Post the submission to the AskReddit subreddit
@@ -75,8 +67,7 @@ while True: #Start the loop
             ratelimittime = ratelimittime.split( )[0] # Parse the error text by discarding the portion after the next space. This should leave us with the number of minutes we're meant to wait.
             ratelimittime = int(ratelimittime)*60 #Multipy the number of minutes by 60
             timetowait = int(ratelimittime)+60 # Add a minute on the end
-            print('As the post did not submit, I will resubmit the following question when the timer expires:')
-            subnum -=1 #Decrement the number of the submission we'll use, as it didn't successfully post last time
+            print('As the post did not submit, reattempt posting a question when the timer expires:')
             waitthislong(timetowait)
             pass
         else:
